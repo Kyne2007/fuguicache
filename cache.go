@@ -1,7 +1,7 @@
 package fuguicache
 
 import (
-	"fuguicache/lru"
+	"github.com/fuguiw/fuguicache/lru"
 	"sync"
 )
 
