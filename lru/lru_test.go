@@ -22,6 +22,23 @@ func TestGet(t *testing.T) {
 	}
 }
 
+func TestMaxBytes(t *testing.T) {
+	lru := New(10, nil)
+	lru.Add("key1", String("1234"))
+	if v, ok := lru.Get("key1"); !ok || string(v.(String)) != "1234" {
+		t.Fatal("cache hit key1=1234 failed.")
+	}
+
+	lru.Add("key2", String("1234"))
+	if v, ok := lru.Get("key2"); !ok || string(v.(String)) != "1234" {
+		t.Fatal("cache hit key2=1234 failed.")
+	}
+
+	if _, ok := lru.Get("key1"); ok || lru.Len() != 1 {
+		t.Fatal("remove key1 failed.")
+	}
+}
+
 func TestRemoveoldest(t *testing.T) {
 	k1, k2, k3 := "key1", "key2", "k3"
 	v1, v2, v3 := "value1", "value2", "v3"
