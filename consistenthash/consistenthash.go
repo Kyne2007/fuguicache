@@ -50,9 +50,7 @@ func (m *Map) Get(key string) string {
 
 	hash := int(m.hash([]byte(key)))
 	// Binary search for appropriate replica.
-	idx := sort.Search(len(m.keys), func(i int) bool {
-		return m.keys[i] >= hash
-	})
+	idx := sort.SearchInts(m.keys, hash)
 
 	return m.hashMap[m.keys[idx%len(m.keys)]]
 }
