@@ -1,0 +1,99 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+class lru.cache {
+    maxBytes int64
+    nbytes   int64
+    ll       *list.List
+    cache    map[string]*list.Element
+
+    OnEvicted func(key string, value Value)
+    Get(key string)
+    RemoveOldest()
+    Add(key string, value Value)
+    Len()
+}
+
+class ByteView {
+	b []byte
+
+	Len()
+    ByteSlice() []byte
+    String() string
+}
+ByteView --o lru.cache
+
+class cache {
+    mu sync.Mutex
+	lru *lru.Cache
+	cacheBytes int64
+}
+cache *-- lru.cache
+
+class Group {
+    name string
+	getter Getter
+	mainCache cache
+	peers     PeerPicker
+	loader *singleflight.Group
+
+	Get(key string) (ByteView, error)
+	load(key string) (value ByteView, err error)
+	getLocally(key string) (ByteView, error)
+	getFromPeer(peer PeerGetter, key string) (ByteView, error)
+	populateCache(key string, value ByteView)
+}
+Group *-- cache
+Group *-- PeerPicker
+
+class HTTPPool {
+	self     string
+	basePath string
+    my sync.Mutex
+    peers *consistenthash.Map
+    httpGetters map[string]*httpGetter
+
+	ServeHTTP(w http.ResponseWriter, r *http.Request)
+	Set(peers ...string)
+	PickPeer(key string) (PeerGetter, bool)
+}
+HTTPPool --> Group
+HTTPPool *-- consistenthash.Map
+HTTPPool *-- httpGetter
+HTTPPool --|> PeerPicker
+
+class httpGetter {
+	baseURL string
+
+	Get(group string, key string) ([]byte, error)
+}
+httpGetter --|> PeerGetter
+
+class consistenthash.Map {
+	hash     Hash
+	replicas int
+	keys     []int // Sorted
+	hashMap  map[int]string
+
+	Add(keys ...string)
+	Get(key string) string
+}
+
+interface PeerPicker {
+    PickPeer(key string) (peer PeerGetter, ok bool)
+}
+
+interface PeerGetter {
+    Get(group string, key string) ([]byte, error)
+}
+
+class singleflight.Group {
+	mu sync.Mutex
+	m  map[string]*call
+
+	Do(key string, fn func() (interface{}, error)) (interface{}, error)
+}
+singleflight.Group --* Group
+
+
+@enduml
