@@ -41,3 +41,16 @@ func TestHashing(t *testing.T) {
 		}
 	}
 }
+
+func BenchmarkHashing(b *testing.B) {
+	hash := New(3, func(key []byte) uint32 {
+		i, _ := strconv.Atoi(string(key))
+		return uint32(i)
+	})
+
+	hash.Add("2", "4", "6", "8", "10", "4444444")
+
+	for i := 0; i < b.N; i++ {
+		hash.Get(strconv.Itoa(i))
+	}
+}
